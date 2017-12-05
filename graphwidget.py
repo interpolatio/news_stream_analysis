@@ -43,20 +43,12 @@ class GraphWidget(QWidget):
 
         self.view.setMinimumSize(600, 600)
 
-        self.okButton = QPushButton("Process")
-        self.cancelButton = QPushButton("Cancel")
-        self.text = QListView()
 
         self.hbox = QHBoxLayout()
-        self.hbox.addStretch(1)
-        self.hbox.addWidget(self.text)
-        self.hbox.addWidget(self.okButton)
-        self.hbox.addWidget(self.cancelButton)
 
         self.vbox = QVBoxLayout()
         self.vbox.addStretch(1)
         self.vbox.addWidget(self.view)
-        self.vbox.addLayout(self.hbox)
         self.setLayout(self.vbox)
 
         #self.view.scene.mouseMoveEvent = lambda event: self.ListViewUpdate
