@@ -59,10 +59,8 @@ class GraphWidget(QWidget):
         self.vbox.addLayout(self.hbox)
         self.setLayout(self.vbox)
 
-        self.view.scene.mouseMoveEvent = lambda event: self.ListViewUpdate
-        # self.view.scene.mousePressEvent= lambda event: self.ListViewUpdate()
+        #self.view.scene.mouseMoveEvent = lambda event: self.ListViewUpdate
 
-        # @QtCore.pyqtSlot()
 
     def ListViewUpdate(self):
         model = QtGui.QStandardItemModel()
