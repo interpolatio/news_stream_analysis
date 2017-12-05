@@ -47,16 +47,5 @@ class GraphWidget(QWidget):
         self.hbox = QHBoxLayout()
 
         self.vbox = QVBoxLayout()
-        self.vbox.addStretch(1)
         self.vbox.addWidget(self.view)
-        self.setLayout(self.vbox)
-
-        #self.view.scene.mouseMoveEvent = lambda event: self.ListViewUpdate
-
-
-    def ListViewUpdate(self):
-        model = QtGui.QStandardItemModel()
-        for node in self.view.scene.selectedItems():
-            item = QtGui.QStandardItem(node.title)
-            model.appendRow(item)
-        self.text.setModel(model)
+        #self.setLayout(self.view)
