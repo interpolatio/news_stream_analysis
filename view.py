@@ -46,7 +46,7 @@ class view(QGraphicsView):
         self.zoomSliderLayout.addWidget(self.zoomOutIcon)
         #QtCore.QObject.connect(self.zoomSlider, QtCore.SIGNAL('valueChanged(int)'), self.setupMatrix())
         #self.zoomSlider.valueChanged(int)#.connect(self.setupMatrix())
-        #self.zoomSlider.valueChanged.connect(self.setupMatrix)
+        self.zoomSlider.valueChanged.connect(self.setupMatrix)
 
     def setupMatrix(self):
         #qreal scale = qPow(qreal(2), (zoomSlider->value() - 250) / qreal(50));
