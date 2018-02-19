@@ -16,34 +16,32 @@ from view import view
 class Communicate(QtCore.QObject):
     closeApp = pyqtSignal()
 
-class ClassBox(QGroupBox):
-    classlists = ['asd', '123']
+class VisibleWidget(QDockWidget):
+    listClass = ['no_class']
+    listVisibleClass = ['no_class']
     def __init__(self, owner):
-        super(ClassBox, self).__init__()
-        self.classVisibleBoxLayout = QVBoxLayout()
-        self.setTitle("Tracing Parameters")
-        owner.setWidget(self)
-        owner.setFloating(False)
-        self.classListUpdate()
+        super(VisibleWidget, self).__init__()
+        self.ClassBox = QGroupBox(self)
+        self.ClassBox.classVisibleBoxLayout = QVBoxLayout()
+        self.ClassBox.setTitle("Tracing Parameters")
+        self.setWidget(self.ClassBox)
+        self.setFloating(False)
+        self.listClass = list(owner.df.groupby('text_class')['text_class'].groups.keys())
+        self.listClassUpdate()
 
-        #self.cur
-        # list(df.groupby('text_class')['text_class'].groups.keys())
-        #self.toggled(self.clicked)
-
-    def classListUpdate(self):
+    def listClassUpdate(self):
         qChkBx_shot_all = QCheckBox("Class-" + "All", self)
 
         qChkBx_shot_all.clicked.connect(self.toggleGroupBoxAll)
         qChkBx_shot_all.setChecked(True)
-        self.classVisibleBoxLayout.addWidget(qChkBx_shot_all, QtCore.Qt.AlignCenter)
-        for class_group in (self.classlists):
+        self.ClassBox.classVisibleBoxLayout.addWidget(qChkBx_shot_all, QtCore.Qt.AlignCenter)
+        for class_group in (self.listClass):
             qChkBx_shot = QCheckBox("Class-" + str(class_group), self)
             qChkBx_shot.setChecked(True)
-            self.classVisibleBoxLayout.addWidget(qChkBx_shot, QtCore.Qt.AlignCenter)
+            self.ClassBox.classVisibleBoxLayout.addWidget(qChkBx_shot, QtCore.Qt.AlignCenter)
             qChkBx_shot.stateChanged.connect(self.toggleGroupBox)
 
-
-        self.setLayout(self.classVisibleBoxLayout)
+        self.ClassBox.setLayout(self.ClassBox.classVisibleBoxLayout)
 
     def toggleGroupBoxAll(self, event):
         check_all = self.findChildren(QCheckBox)[0]
@@ -54,10 +52,13 @@ class ClassBox(QGroupBox):
 
     def toggleGroupBox   (self, event):
         flagCheck = True
-        for checkbox in self.findChildren(QCheckBox)[1:]:
+        self.listVisibleClass = []
+        for checkbox, className in zip(self.ClassBox.findChildren(QCheckBox)[1:], self.listClass[1:]):
             if not checkbox.isChecked():
                 flagCheck = False
-        self.findChildren(QCheckBox)[0].setChecked(flagCheck)
+            else:
+                self.listVisibleClass.append(className)
+        self.ClassBox.findChildren(QCheckBox)[0].setChecked(flagCheck)
 
 
 class MainWindow(QMainWindow):
@@ -68,9 +69,9 @@ class MainWindow(QMainWindow):
         self.c = Communicate()
 
 
-        df = process.get_dataframe()
+        self.df = process.get_dataframe()
 
-        for i, node in df.iloc[:, :].iterrows():
+        for i, node in self.df.iloc[:, :].iterrows():
             ooo = Node(node['text_class'], node['x'], node['y'], node['title'], node['not_prep'])
             self.view.scene.addItem(ooo)
 
@@ -82,7 +83,7 @@ class MainWindow(QMainWindow):
         file.addAction("quit")
 
         self.items = QDockWidget("Title file", self)
-        self.classVisible = QDockWidget("Class Visible", self)
+        self.classVisible = VisibleWidget(self)
 
         self.textWidget = QListView()
         self.items.setWidget(self.textWidget)
@@ -97,8 +98,6 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Text Visualization")
 
         self.view.moved.connect(self.ListViewUpdate)
-
-        self.Class = ClassBox(self.classVisible)
 
     def ListViewUpdate(self):
         model = QtGui.QStandardItemModel()
