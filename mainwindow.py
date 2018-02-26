@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QApplication
-from PyQt5.QtWidgets import (QDockWidget, QMainWindow, QListWidget, QTextEdit, QWidget, QPushButton, QHBoxLayout, QVBoxLayout, QSplitter, QListView, QGroupBox,QCheckBox)
+from PyQt5.QtWidgets import (QDockWidget, QMainWindow, QListWidget, QTextEdit, QWidget, QPushButton, QHBoxLayout, QVBoxLayout, QSplitter, QListView, QGroupBox,QCheckBox, QGraphicsItemGroup)
 from PyQt5.QtWidgets import QGraphicsView
 from PyQt5.QtCore import pyqtSlot, pyqtSignal
 from PyQt5.QtWidgets import QSplitter
@@ -13,12 +13,13 @@ import pandas as pd
 from node import Node
 from view import view
 
-class Communicate(QtCore.QObject):
-    closeApp = pyqtSignal()
+# class Communicate(QtCore.QObject):
+#     closeApp = pyqtSignal()
 
 class VisibleWidget(QDockWidget):
     listClass = ['no_class']
     listVisibleClass = ['no_class']
+    list_visible_class_update_signal = QtCore.pyqtSignal()
     def __init__(self, owner):
         super(VisibleWidget, self).__init__()
         self.ClassBox = QGroupBox(self)
@@ -40,25 +41,24 @@ class VisibleWidget(QDockWidget):
             qChkBx_shot.setChecked(True)
             self.ClassBox.classVisibleBoxLayout.addWidget(qChkBx_shot, QtCore.Qt.AlignCenter)
             qChkBx_shot.stateChanged.connect(self.toggleGroupBox)
-
         self.ClassBox.setLayout(self.ClassBox.classVisibleBoxLayout)
 
     def toggleGroupBoxAll(self, event):
         check_all = self.findChildren(QCheckBox)[0]
         flagCheckAll = check_all.isChecked()
-        for checkbox in self.findChildren(QCheckBox)[0:]:
+        for checkbox in self.findChildren(QCheckBox)[1:]:
             checkbox.setChecked(flagCheckAll)
 
-
-    def toggleGroupBox   (self, event):
-        flagCheck = True
+    def toggleGroupBox(self, event):
+        flag_check = True
         self.listVisibleClass = []
-        for checkbox, className in zip(self.ClassBox.findChildren(QCheckBox)[1:], self.listClass[1:]):
+        for checkbox, className in zip(self.ClassBox.findChildren(QCheckBox)[1:], self.listClass[0:]):
             if not checkbox.isChecked():
-                flagCheck = False
+                flag_check = False
             else:
                 self.listVisibleClass.append(className)
-        self.ClassBox.findChildren(QCheckBox)[0].setChecked(flagCheck)
+        self.list_visible_class_update_signal.emit()
+        self.ClassBox.findChildren(QCheckBox)[0].setChecked(flag_check)
 
 
 class MainWindow(QMainWindow):
@@ -66,14 +66,11 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__(parent)
         self.view = view(self)
         self.timerId = 0
-        self.c = Communicate()
+        #self.c = Communicate()
 
 
         self.df = process.get_dataframe()
 
-        for i, node in self.df.iloc[:, :].iterrows():
-            ooo = Node(node['text_class'], node['x'], node['y'], node['title'], node['not_prep'])
-            self.view.scene.addItem(ooo)
 
         layout = QHBoxLayout()
         bar = self.menuBar()
@@ -97,7 +94,12 @@ class MainWindow(QMainWindow):
         self.setLayout(layout)
         self.setWindowTitle("Text Visualization")
 
+        for i, df_node in self.df.iloc[:, :].iterrows():
+            node = Node(df_node['text_class'], df_node['x'], df_node['y'], df_node['title'], df_node['not_prep'])
+            self.view.scene.addItem(node)
+
         self.view.moved.connect(self.ListViewUpdate)
+        self.classVisible.list_visible_class_update_signal.connect(self.list_visible_update)
 
     def ListViewUpdate(self):
         model = QtGui.QStandardItemModel()
@@ -113,3 +115,10 @@ class MainWindow(QMainWindow):
             model.appendRow(item)
         self.textWidget.setModel(model)
 
+    def list_visible_update(self):
+
+        for node in self.view.scene.items():
+            if not(node.nodeclass in self.classVisible.listVisibleClass):
+                node.hide()
+            else:
+                node.show()
