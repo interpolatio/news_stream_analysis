@@ -40,19 +40,19 @@ class view(QGraphicsView):
         self.zoomSlider = QSlider(self)
         self.zoomSlider.setMinimum(0)
         self.zoomSlider.setMaximum(500)
-        self.zoomSlider.setValue(250)
+        self.zoomSlider.setValue(150)
         self.zoomSliderLayout = QVBoxLayout(self)
         self.zoomSliderLayout.addWidget(self.zoomInIcon)
         self.zoomSliderLayout.addWidget(self.zoomSlider)
         self.zoomSliderLayout.addWidget(self.zoomOutIcon)
         self.zoomSlider.valueChanged.connect(self.setupMatrix)
+        self.setupMatrix()
 
     def setupMatrix(self):
 
         scale = pow(2, (self.zoomSlider.value() - 250) / 50.)
         k = QtGui.QTransform()
         k.scale(scale, scale)
-        print(scale)
         self.setTransform(k)
 
     def zoomIn(self, level: int):
