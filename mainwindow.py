@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QApplication
-from PyQt5.QtWidgets import (QDockWidget, QMainWindow, QListWidget, QTextEdit, QWidget, QPushButton, QHBoxLayout, QVBoxLayout, QSplitter, QListView, QGroupBox,QCheckBox, QGraphicsItemGroup)
+from PyQt5.QtWidgets import (QDockWidget, QMainWindow, QAction, qApp, QFileDialog, QListWidget, QTextEdit, QWidget, QPushButton, QHBoxLayout, QVBoxLayout, QSplitter, QListView, QGroupBox,QCheckBox, QGraphicsItemGroup)
 from PyQt5.QtWidgets import QGraphicsView
 from PyQt5.QtCore import pyqtSlot, pyqtSignal
 from PyQt5.QtWidgets import QSplitter
@@ -29,10 +29,20 @@ class VisibleWidget(QDockWidget):
         # self.ClassBox.setTitle("")
         self.setWidget(self.ClassBox)
         self.setFloating(False)
-        self.listClass = list(owner.df.groupby('text_class')['text_class'].groups.keys())
-        self.listClassUpdate()
+        self.listClassUpdate(owner)
+        self.listVisibleClassUpdate()
 
-    def listClassUpdate(self):
+
+    def listClassUpdate(self,owner):
+        for classBoxChild in self.ClassBox.children():
+            if type(classBoxChild) == QCheckBox:
+                classBoxChild.setParent(None)
+        if not (owner.df.empty):
+            #print(self.listClass)
+            self.listClass = list(owner.df.groupby('text_class')['text_class'].groups.keys())
+            self.listVisibleClassUpdate()
+
+    def listVisibleClassUpdate(self):
         qChkBx_shot_all = QCheckBox("Class-" + "All", self)
 
         qChkBx_shot_all.clicked.connect(self.toggleGroupBoxAll)
@@ -69,17 +79,36 @@ class MainWindow(QMainWindow):
         self.view = view(self)
         self.timerId = 0
         #self.c = Communicate()
+        self.df = pd.DataFrame()
+
+        # self.df = process.get_dataframe()
 
 
-        self.df = process.get_dataframe()
+        dirAction = QAction("&Open dir", self);
+        dirAction.setShortcut('Ctrl+O')
+        dirAction.triggered.connect(self.openFileNameDialog)
+
+        datAction = QAction("Open &dat", self);
+        datAction.setShortcut('Ctrl+D')
+        datAction.triggered.connect(self.openDataNameDialog)
+
+        exitAction = QAction('&Exit', self)
+        exitAction.setShortcut('Ctrl+Q')
+        exitAction.setStatusTip('Exit application')
+        exitAction.triggered.connect(qApp.quit)
 
 
         layout = QHBoxLayout()
         bar = self.menuBar()
-        file = bar.addMenu("File")
-        file.addAction("New")
-        file.addAction("save")
-        file.addAction("quit")
+        file = bar.addMenu("&File")
+        file.addAction(dirAction)
+        file.addAction(datAction)
+        file.addAction("Save")
+        file.addAction(exitAction)
+        file1 = bar.addMenu("asd")
+        file1.addAction("123 dir")
+        file1.addAction("d")
+        file1.addAction("Quit")
 
         self.items = QDockWidget("Title file", self)
         self.classVisible = VisibleWidget(self)
@@ -98,9 +127,9 @@ class MainWindow(QMainWindow):
         self.setLayout(layout)
         self.setWindowTitle("Text Visualization")
 
-        for i, df_node in self.df.iloc[:, :].iterrows():
-            node = Node(df_node['text_class'], df_node['x'], df_node['y'], df_node['title'], df_node['not_prep'])
-            self.view.scene.addItem(node)
+        # for i, df_node in self.df.iloc[:10, :].iterrows():
+        #     node = Node(df_node['text_class'], df_node['x'], df_node['y'], df_node['title'], df_node['not_prep'])
+        #     self.view.scene.addItem(node)
 
         # self.class_rotate()
 
@@ -109,6 +138,28 @@ class MainWindow(QMainWindow):
         self.compression()
         # self.compression()
         self.classVisible.list_visible_class_update_signal.connect(self.list_visible_update)
+
+    def openFileNameDialog(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        fileName, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "",
+                                                  "All Files (*);;Python Files (*.py)", options=options)
+        if fileName:
+            print(fileName)
+
+    def openDataNameDialog(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        fileName, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "",
+                                                  "Data Files (*.dat);;All Files (*)", options=options)
+        if fileName:
+            print(fileName)
+            df_update = process.get_dataframe()
+            self.df = pd.concat([self.df, df_update])
+            for i, df_node in df_update.iloc[:, :].iterrows():
+                node = Node(df_node['text_class'], df_node['x'], df_node['y'], df_node['title'], df_node['not_prep'])
+                self.view.scene.addItem(node)
+            self.classVisible.listClassUpdate(self)
 
     def compression(self):
         delta_value = abs(self.class_compression.zoomSlider.value() - self.class_compression.old_value)
@@ -119,10 +170,10 @@ class MainWindow(QMainWindow):
         class_node = self.classVisible.listClass[0]
         self.node_group = QGraphicsItemGroup()
         self.node = self.view.scene.items()
-        print(self.node[0],self.node[0].transform().isScaling() )
-        print(scale)
-        print(delta_value)
-        print(pow(2, (self.class_compression.zoomSlider.value() - 250) / 50.))
+        # print(self.node[0],self.node[0].transform().isScaling() )
+        # print(scale)
+        # print(delta_value)
+        # print(pow(2, (self.class_compression.zoomSlider.value() - 250) / 50.))
 
         for node in self.view.scene.items():
             if (type(node) is Node ):
@@ -131,9 +182,9 @@ class MainWindow(QMainWindow):
                     # node.setScale(scale)
                     self.node_group.addToGroup(node)
         self.view.scene.addItem(self.node_group)
-        print(self.node_group)
-        # self.node_group.setScale(scale)
-        print(self.node[0], self.node[0].transform().isScaling() )
+        # print(self.node_group)
+        # # self.node_group.setScale(scale)
+        # print(self.node[0], self.node[0].transform().isScaling() )
         # self.node_group.setRotation(90)
         self.view.scene.destroyItemGroup(self.node_group)
 
