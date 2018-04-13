@@ -9,6 +9,9 @@ from PyQt5 import QtCore
 from PyQt5 import QtGui
 import process
 import pandas as pd
+import os
+import pickle
+import operator
 
 from node import Node
 from view import view
@@ -141,11 +144,43 @@ class MainWindow(QMainWindow):
 
     def openFileNameDialog(self):
         options = QFileDialog.Options()
-        options |= QFileDialog.DontUseNativeDialog
-        fileName, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "",
-                                                  "All Files (*);;Python Files (*.py)", options=options)
-        if fileName:
-            print(fileName)
+        # options |= QFileDialog.DontUseNativeDialog
+        directory = QFileDialog.getExistingDirectory(self, "Find Files"
+                                                     , options=options)
+        # directory = 'C:/Users/user/PycharmProjects/russian_text'
+        if directory:
+            print(directory)
+            print(os.listdir(directory))
+            text_buf = process.init_text(directory)
+            print(len(text_buf))
+            text_not_prep = process.filter_symbol(text_buf)
+            text_stem = process.stemming(text_not_prep)
+            texts_without_stopwords = process.filter_stop_words(text_stem)
+            print("stemming ok")
+            path = 'C:\\Users\\user\\PycharmProjects\\russian_text'
+            with open(path + '\\etalon_model.dat', 'rb') as f:
+                print("_")
+                etalon_model = pickle.load(f)
+            print("etalon ok")
+            with open(path + '//dictionary_all.dat', 'rb') as f:
+                dictionary_all = pickle.load(f)
+            print("dictionary ok")
+            corpus = [dictionary_all.doc2bow(text_buf) for text in texts_without_stopwords]
+            print("corpus ok")
+            pos = process.MDS_text_main(texts_without_stopwords)
+            print("MDS ok")
+            df_update = pd.DataFrame(
+                dict(x=pos[:, 0], y=pos[:, 1], not_prep=text_not_prep, without_stopwords=texts_without_stopwords,
+                     title=os.listdir(directory)))
+            df_update['text_class'] = df_update.apply(lambda row: max(etalon_model[dictionary_all.doc2bow(row['without_stopwords'])],
+                                                        key=operator.itemgetter(1))[0], axis=1)
+            self.df = pd.concat([self.df, df_update])
+            print("classifitation ok")
+            for i, df_node in df_update.iloc[:, :].iterrows():
+                node = Node(df_node['text_class'], df_node['x'], df_node['y'], df_node['title'], df_node['not_prep'])
+                self.view.scene.addItem(node)
+            print(" node ok")
+            self.classVisible.listClassUpdate(self)
 
     def openDataNameDialog(self):
         options = QFileDialog.Options()
@@ -154,7 +189,7 @@ class MainWindow(QMainWindow):
                                                   "Data Files (*.dat);;All Files (*)", options=options)
         if fileName:
             print(fileName)
-            df_update = process.get_dataframe()
+            df_update = process.get_dataframe(fileName)
             self.df = pd.concat([self.df, df_update])
             for i, df_node in df_update.iloc[:, :].iterrows():
                 node = Node(df_node['text_class'], df_node['x'], df_node['y'], df_node['title'], df_node['not_prep'])
