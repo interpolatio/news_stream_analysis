@@ -7,6 +7,9 @@ from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.manifold import MDS
+from sklearn.manifold import TSNE
+from MulticoreTSNE import MulticoreTSNE as TSNE
+
 
 def init_text(path):
     #path = 'D:\\Documents\\python\\russian_text\\all'
@@ -16,7 +19,7 @@ def init_text(path):
         if os.listdir(path):
             listdir = os.listdir(path)
             for dir_name in listdir:
-                f = open(path + '/' + dir_name)
+                f = open(path + '/' + dir_name, encoding="cp1251")
                 text.append(f.read())
                 f.close()
     return text
@@ -58,6 +61,21 @@ def MDS_text_main(texts_without_stopwords):
     mds = MDS(n_components=2, dissimilarity="precomputed", random_state=1)
     pos = mds.fit_transform(dist)  # shape (n_components, n_samples)
     pos = pos * 1000
+    return pos
+
+def TSNE_text_main(texts_without_stopwords):
+    data = []
+    for i in texts_without_stopwords:
+        data.append(" ".join(i))
+    vec = CountVectorizer(min_df=10)
+    X = vec.fit_transform(data)
+    vocab = vec.get_feature_names()
+    dist = 1 - cosine_similarity(X)
+
+    tsne = TSNE(n_jobs=8)
+    #pos = TSNE(n_components=2).fit_transform(dist)
+    pos = tsne.fit_transform(dist)
+    pos = pos * 10
     return pos
 
 def get_dataframe(path):
