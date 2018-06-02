@@ -10,10 +10,10 @@ if __name__ == '__main__':
 
     app = QApplication(sys.argv)
     w = MainWindow()
-    #w = QWidget()
-    #w.resize(600, 600)
-    # w.move(300, 300)
-    # w.setWindowTitle('Simple')
+    w.resize(1000, 800)
+    #max_width = app.desktop().screenGeometry().width()
+    #max_height = app.desktop().screenGeometry().height()
+    #w.setMaximumSize(max_width, max_height)
     w.show()
 
     sys.exit(app.exec_())
