@@ -27,14 +27,48 @@ class VisibleWidget(QDockWidget):
     def __init__(self, owner):
         super(VisibleWidget, self).__init__()
         self.setWindowTitle("Tracing Parameters")
-        self.ClassBox = QGroupBox(self)
-        self.ClassBox.classVisibleBoxLayout = QVBoxLayout()
-        # self.ClassBox.setTitle("")
-        self.setWidget(self.ClassBox)
-        self.setFloating(False)
+        #self.setFloating(False)
+
+        #self.scroll_area = QtWidgets.QScrollArea()
+        #self.ClassBox = QtWidgets.QWidget()
+        #self.ClassBox.setLayout(self.scroll_area)
+        #self.classVisibleBoxLayout = QVBoxLayout()
+
+
+
+        #self.ClassBox.setLayout(self.classVisibleBoxLayout)
+
+        #self.scroll_area.setWidget(self.ClassBox)
+
+        #self.layout = QtWidgets.QHBoxLayout()
+        #self.layout.addWidget(self.scroll_area)
+
+        #self.dockedWidget = QtWidgets.QWidget()
+        #self.dockedWidget.setLayout(self.layout)
+
+        self.scroll_layout = QtWidgets.QVBoxLayout()
+
+        self.scroll_widget = QtWidgets.QGroupBox()
+        self.scroll_widget.setLayout(self.scroll_layout)
+
+        self.scroll_area = QtWidgets.QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setWidget(self.scroll_widget)
+
+        self.ClassBox = QtWidgets.QWidget()
+        self.ClassBox_layout = QtWidgets.QVBoxLayout(self.ClassBox)
+        for i in range(30):
+            self.ClassBox_layout.addWidget(QtWidgets.QCheckBox('Hello World!'))
+        self.scroll_layout.addWidget(self.ClassBox)
+
         self.listClassUpdate(owner)
         self.listVisibleClassUpdate()
 
+        self.setWidget(self.scroll_area)
+
+        #self.scroll_area.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        #self.setWidget(self.scroll_area)
+        #self.setLayout(self.classVisibleBoxLayout)
 
     def listClassUpdate(self,owner):
         for classBoxChild in self.ClassBox.children():
@@ -48,15 +82,19 @@ class VisibleWidget(QDockWidget):
     def listVisibleClassUpdate(self):
         qChkBx_shot_all = QCheckBox("Class-" + "All", self)
 
+        #print(self.ClassBox_layout.count())
+
+
         qChkBx_shot_all.clicked.connect(self.toggleGroupBoxAll)
         qChkBx_shot_all.setChecked(True)
-        self.ClassBox.classVisibleBoxLayout.addWidget(qChkBx_shot_all, QtCore.Qt.AlignCenter)
+        #qChkBx_shot_all.setMinimumHeight(20)
+        self.ClassBox_layout.addWidget(qChkBx_shot_all)
         for class_group in (self.listClass):
             qChkBx_shot = QCheckBox("Class-" + str(class_group), self)
             qChkBx_shot.setChecked(True)
-            self.ClassBox.classVisibleBoxLayout.addWidget(qChkBx_shot, QtCore.Qt.AlignCenter)
+            #qChkBx_shot.setMinimumHeight(20)
+            self.ClassBox_layout.addWidget(qChkBx_shot)
             qChkBx_shot.stateChanged.connect(self.toggleGroupBox)
-        self.ClassBox.setLayout(self.ClassBox.classVisibleBoxLayout)
 
     def toggleGroupBoxAll(self, event):
         check_all = self.findChildren(QCheckBox)[0]
@@ -86,7 +124,7 @@ class MainWindow(QMainWindow):
 
         # self.df = process.get_dataframe()
 
-
+        # ------------------File-------------------------
         dirAction = QAction("&Open dir", self);
         dirAction.setShortcut('Ctrl+O')
         dirAction.triggered.connect(self.openFileNameDialog)
@@ -95,10 +133,25 @@ class MainWindow(QMainWindow):
         datAction.setShortcut('Ctrl+D')
         datAction.triggered.connect(self.openDataNameDialog)
 
+        SaveAction = QAction("&Save dat", self);
+        SaveAction.setShortcut('Ctrl+S')
+        SaveAction.triggered.connect(self.openSaveDialog)
+
         exitAction = QAction('&Exit', self)
         exitAction.setShortcut('Ctrl+Q')
         exitAction.setStatusTip('Exit application')
         exitAction.triggered.connect(qApp.quit)
+
+        # ------------------Edit---------------------------
+        ClearAction = QAction("&Clear DataFrame", self);
+        #ClearAction.setShortcut('Ctrl+S')
+        ClearAction.triggered.connect(self.ClearData)
+
+        # ------------------View-------------------------
+        TracingParametrVisibleAction = QAction("&Tracing Parametr", self);
+        #TracingParametrVisibleAction.setShortcut('Ctrl+D')
+        TracingParametrVisibleAction.triggered.connect(self.TracingParametrVisible)
+
 
 
         layout = QHBoxLayout()
@@ -106,11 +159,15 @@ class MainWindow(QMainWindow):
         file = bar.addMenu("&File")
         file.addAction(dirAction)
         file.addAction(datAction)
-        file.addAction("Save")
+        file.addAction(SaveAction)
         file.addAction(exitAction)
-        file1 = bar.addMenu("asd")
-        file1.addAction("123 dir")
-        file1.addAction("d")
+
+        edit_bar = bar.addMenu("&Edit")
+        edit_bar.addAction(ClearAction)
+
+        file1 = bar.addMenu("&View")
+        file1.addAction(TracingParametrVisibleAction)
+        file1.addAction("Title file")
         file1.addAction("Quit")
 
         self.items = QDockWidget("Title file", self)
@@ -157,18 +214,23 @@ class MainWindow(QMainWindow):
             text_stem = process.stemming(text_not_prep)
             texts_without_stopwords = process.filter_stop_words(text_stem)
             print("stemming ok")
-            path = 'C:\\Users\\user\\PycharmProjects\\russian_text'
-            with open(path + '\\etalon_model.dat', 'rb') as f:
-                print("_")
+            path = os.getcwd()
+            print(path)
+            print(os.listdir(path))
+            #path = 'C:\\Users\\user\\PycharmProjects\\russian_text'
+
+            with open(path + "\\etalon_model.dat", 'rb') as f:
                 etalon_model = pickle.load(f)
             print("etalon ok")
-            with open(path + '//dictionary_all.dat', 'rb') as f:
+            with open(path + '\\dictionary_all.dat', 'rb') as f:
                 dictionary_all = pickle.load(f)
             print("dictionary ok")
             corpus = [dictionary_all.doc2bow(text_buf) for text in texts_without_stopwords]
             print("corpus ok")
-            pos = process.MDS_text_main(texts_without_stopwords)
-            print("MDS ok")
+            # pos = process.MDS_text_main(texts_without_stopwords)
+            # print("MDS ok")
+            pos = process.TSNE_text_main(texts_without_stopwords)
+            print("TSNE ok")
             df_update = pd.DataFrame(
                 dict(x=pos[:, 0], y=pos[:, 1], not_prep=text_not_prep, without_stopwords=texts_without_stopwords,
                      title=os.listdir(directory)))
@@ -195,6 +257,24 @@ class MainWindow(QMainWindow):
                 node = Node(df_node['text_class'], df_node['x'], df_node['y'], df_node['title'], df_node['not_prep'])
                 self.view.scene.addItem(node)
             self.classVisible.listClassUpdate(self)
+
+    def openSaveDialog(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        fileName, _ = QFileDialog.getSaveFileName(self, "QFileDialog.getSaveFileName()", "",
+                                                  "All Files (*);;Text Files (*.txt)", options=options)
+        if fileName:
+            pickle.dump(self.df, open(fileName, "wb"))
+            print(fileName)
+
+    def ClearData(self):
+        self.view.scene.clear()
+        self.df = self.df.iloc[0:0]
+        print("clear Data")
+
+    def TracingParametrVisible(self):
+        self.classVisible.setVisible(not(self.classVisible.isVisible()))
+        #print()
 
     def compression(self):
         delta_value = abs(self.class_compression.zoomSlider.value() - self.class_compression.old_value)
