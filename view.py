@@ -17,7 +17,10 @@ class view(QGraphicsView):
             super(view, self).wheelEvent(event)
 
     def mouseMoveEvent(self, event):
-
+        if (event.modifiers() == QtCore.Qt.ControlModifier):
+            self.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
+        else:
+            self.setDragMode(QtWidgets.QGraphicsView.RubberBandDrag)
         self.moved.emit(event)
         super(view, self).mouseMoveEvent(event)
 
